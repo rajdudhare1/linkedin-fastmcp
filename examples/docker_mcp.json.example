@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "linkedin-fastmcp": {
+      "command": "docker",
+      "args": [
+        "run", "--rm", "-i",
+        "-e", "LINKEDIN_CLIENT_ID=your-client-id",
+        "-e", "LINKEDIN_CLIENT_SECRET=your-client-secret",
+        "-e", "LINKEDIN_ACCESS_TOKEN=your-access-token",
+        "linkedin-fastmcp:latest",
+        "--transport", "stdio"
+      ]
+    }
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "linkedin-fastmcp": {
+      "type": "remote",
+      "url": "http://localhost:8000/mcp",
+      "enabled": true,
+      "oauth": {
+        "clientId": "{env:LINKEDIN_CLIENT_ID}",
+        "clientSecret": "{env:LINKEDIN_CLIENT_SECRET}",
+        "scope": "openid profile email r_profile_basicinfo w_member_social r_events rw_events"
+      }
+    }
+  }
+}

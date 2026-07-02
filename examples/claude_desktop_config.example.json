@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "linkedin-fastmcp": {
+      "command": "python3",
+      "args": ["-m", "linkedin_fastmcp"],
+      "env": {
+        "LINKEDIN_CLIENT_ID": "your-client-id",
+        "LINKEDIN_CLIENT_SECRET": "your-client-secret",
+        "LINKEDIN_ACCESS_TOKEN": "your-access-token"
+      }
+    }
+  }
+}

@@ -1,0 +1,11 @@
+.venv
+.env
+.pytest_cache
+.ruff_cache
+dist
+__pycache__
+*.pyc
+*.egg-info
+tests
+google-workspace-mcp
+.git
