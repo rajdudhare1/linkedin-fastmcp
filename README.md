@@ -1,18 +1,50 @@
+<div align="center">
+
 # LinkedIn FastMCP
+
+### Give your AI coding agent superpowers on LinkedIn
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
-[![MCP](https://img.shields.io/badge/MCP-compatible-green.svg)](https://modelcontextprotocol.io/)
+[![MCP Compatible](https://img.shields.io/badge/MCP-compatible-brightgreen.svg)](https://modelcontextprotocol.io/)
+[![Tests](https://img.shields.io/badge/tests-43%20passed-success.svg)]()
+[![Security](https://img.shields.io/badge/security-hardened-blueviolet.svg)](SECURITY.md)
+[![Docker Ready](https://img.shields.io/badge/docker-ready-2496ED.svg?logo=docker&logoColor=white)]()
+[![LinkedIn API](https://img.shields.io/badge/LinkedIn-API%20v2-0A66C2.svg?logo=linkedin&logoColor=white)](https://learn.microsoft.com/en-us/linkedin/)
 
-> MCP server for LinkedIn REST APIs. Give any MCP-compatible AI coding agent the ability to create posts, upload images, manage comments, reactions, events, and more -- all via official LinkedIn APIs.
+<br/>
+
+**36 tools** &bull; **API-only** (no browser scraping) &bull; **OAuth 2.0** &bull; **Security hardened**
+
+[Getting Started](#quick-start) &bull; [Tool Catalog](#tool-catalog-36-tools) &bull; [IDE Setup](#mcp-client-configuration) &bull; [Docker](#docker) &bull; [Contributing](CONTRIBUTING.md)
+
+</div>
+
+---
+
+> An open-source MCP server that connects AI coding agents to LinkedIn's official REST APIs. Create posts, upload images, manage comments, reactions, organization pages, events -- all through the Model Context Protocol.
 
 **This project is independent and not affiliated with, authorized by, endorsed by, or sponsored by LinkedIn Corporation or Microsoft.**
 
 ---
 
+## Why LinkedIn FastMCP?
+
+| | Browser Scraping MCP Servers | **LinkedIn FastMCP** |
+|---|---|---|
+| **Method** | Headless browser automation | Official LinkedIn REST APIs |
+| **Write Operations** | Fragile, often broken | Reliable, API-backed |
+| **Auth** | Cookie-based sessions | OAuth 2.0 with token refresh |
+| **Account Risk** | Possible restrictions | Zero risk (official APIs) |
+| **Image Posts** | Not supported | Full 3-step upload workflow |
+| **Events** | Not supported | Create, list, get org events |
+| **Speed** | Slow (page loads) | Fast (direct API calls) |
+| **Docker** | Complex (Chromium deps) | Lightweight Python image |
+
+---
+
 ## Features
 
-- **OAuth 2.0** -- Full 3-legged OAuth flow with native MCP OAuth support (OpenCode auto-auth)
 - **Posts** -- Create, list, get, delete text and link posts
 - **Image Posts** -- Register, upload, and publish image posts (3-step workflow)
 - **Comments** -- Create, reply, get, delete comments on any activity
@@ -20,8 +52,9 @@
 - **Organizations** -- List admin orgs, get org details, post as org, list org posts
 - **Events** -- List, get, create organization events (in-person + external)
 - **Profile** -- Get authenticated member profile, email, basic info, verification status
+- **OAuth 2.0** -- Full 3-legged flow with native MCP OAuth support
 - **Escape Hatch** -- `api_get` and `api_post` for any `/rest` or `/v2` LinkedIn endpoint
-- **Security Hardened** -- SSRF protection, XSS prevention, token masking, input validation
+- **Security** -- SSRF protection, XSS prevention, token masking, input validation
 
 ---
 
@@ -29,49 +62,43 @@
 
 ### 1. Create a LinkedIn App
 
-Go to [LinkedIn Developer Portal](https://www.linkedin.com/developers/apps) and create an app. Add these products:
+Go to the [LinkedIn Developer Portal](https://www.linkedin.com/developers/apps) and create an app. Add these products:
 
 | Product | Scopes Granted |
 |---|---|
 | **Sign In with LinkedIn using OpenID Connect** | `openid`, `profile`, `email` |
 | **Share on LinkedIn** | `w_member_social` |
-| **Events Management API** | `r_events`, `rw_events` |
+| **Events Management API** *(optional)* | `r_events`, `rw_events` |
 
 Set the redirect URI to `http://localhost:8000/callback`.
 
-### 2. Install
+### 2. Install & Run
 
 ```bash
+git clone https://github.com/rajdudhare1/linkedin-fastmcp.git
+cd linkedin-fastmcp/mcp-servers/linkedin-fastmcp
 pip install -e .
 ```
 
-### 3. Configure
-
 ```bash
 cp .env.example .env
-# Edit .env with your LINKEDIN_CLIENT_ID and LINKEDIN_CLIENT_SECRET
+# Add your LINKEDIN_CLIENT_ID and LINKEDIN_CLIENT_SECRET to .env
 ```
 
-### 4. Run
-
 ```bash
-# stdio mode (for local MCP clients)
+# stdio mode (local MCP clients)
 python3 -m linkedin_fastmcp
 
-# HTTP mode (for remote MCP clients / Docker)
+# HTTP mode (remote MCP clients / Docker)
 python3 -m linkedin_fastmcp --transport streamable-http --host 127.0.0.1 --port 8000 --path /mcp
 ```
 
-### 5. Authenticate
+### 3. Authenticate
+
+OpenCode handles auth automatically. Or manually:
 
 ```bash
-# Option A: OpenCode handles it automatically (recommended)
 opencode mcp auth linkedin-fastmcp
-
-# Option B: Manual flow
-# 1. Call linkedin_get_auth_url tool
-# 2. Open the URL, approve, copy the code
-# 3. Call linkedin_exchange_code_for_token with the code
 ```
 
 ---
@@ -79,31 +106,30 @@ opencode mcp auth linkedin-fastmcp
 ## Docker
 
 ```bash
-# Build
 docker build -t linkedin-fastmcp:latest .
 
-# Run
 docker run --rm -p 8000:8000 \
   -e LINKEDIN_CLIENT_ID=your-client-id \
   -e LINKEDIN_CLIENT_SECRET=your-client-secret \
   linkedin-fastmcp:latest
 ```
 
+No secrets baked into the image. Pass credentials at runtime via `-e` or `--env-file .env`.
+
 ---
 
 ## MCP Client Configuration
 
-### OpenCode (Recommended)
+<details>
+<summary><b>OpenCode</b> (Recommended -- native OAuth support)</summary>
 
 ```jsonc
 // ~/.config/opencode/opencode.jsonc
 {
-  "$schema": "https://opencode.ai/config.json",
   "mcp": {
     "linkedin-fastmcp": {
       "type": "remote",
       "url": "http://localhost:8000/mcp",
-      "enabled": true,
       "oauth": {
         "clientId": "{env:LINKEDIN_CLIENT_ID}",
         "clientSecret": "{env:LINKEDIN_CLIENT_SECRET}",
@@ -113,8 +139,10 @@ docker run --rm -p 8000:8000 \
   }
 }
 ```
+</details>
 
-### Claude Desktop
+<details>
+<summary><b>Claude Desktop</b></summary>
 
 ```json
 {
@@ -131,8 +159,10 @@ docker run --rm -p 8000:8000 \
   }
 }
 ```
+</details>
 
-### Claude Desktop (Docker)
+<details>
+<summary><b>Claude Desktop (Docker)</b></summary>
 
 ```json
 {
@@ -151,8 +181,12 @@ docker run --rm -p 8000:8000 \
   }
 }
 ```
+</details>
 
-### Cursor / Windsurf / VS Code (Copilot)
+<details>
+<summary><b>Cursor</b></summary>
+
+Add to `.cursor/mcp.json`:
 
 ```json
 {
@@ -169,9 +203,51 @@ docker run --rm -p 8000:8000 \
   }
 }
 ```
+</details>
 
-For Cursor, add this to `.cursor/mcp.json` in your project.
-For Windsurf, add this to `~/.codeium/windsurf/mcp_config.json`.
+<details>
+<summary><b>Windsurf</b></summary>
+
+Add to `~/.codeium/windsurf/mcp_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "linkedin-fastmcp": {
+      "command": "python3",
+      "args": ["-m", "linkedin_fastmcp"],
+      "env": {
+        "LINKEDIN_CLIENT_ID": "your-client-id",
+        "LINKEDIN_CLIENT_SECRET": "your-client-secret",
+        "LINKEDIN_ACCESS_TOKEN": "your-access-token"
+      }
+    }
+  }
+}
+```
+</details>
+
+<details>
+<summary><b>VS Code (GitHub Copilot)</b></summary>
+
+Add to `.vscode/mcp.json`:
+
+```json
+{
+  "mcpServers": {
+    "linkedin-fastmcp": {
+      "command": "python3",
+      "args": ["-m", "linkedin_fastmcp"],
+      "env": {
+        "LINKEDIN_CLIENT_ID": "your-client-id",
+        "LINKEDIN_CLIENT_SECRET": "your-client-secret",
+        "LINKEDIN_ACCESS_TOKEN": "your-access-token"
+      }
+    }
+  }
+}
+```
+</details>
 
 ---
 
@@ -189,28 +265,28 @@ For Windsurf, add this to `~/.codeium/windsurf/mcp_config.json`.
 | `linkedin_get_me` | Get profile via OpenID Connect |
 | `linkedin_get_basic_profile` | Get profile via `/v2/me` |
 | `linkedin_get_email` | Get primary email address |
-| `linkedin_get_verification_status` | Check verification status (`r_verify`) |
+| `linkedin_get_verification_status` | Check verification status |
 
 ### Posts (6 tools)
 
-| Tool | Scope | Description |
-|---|---|---|
-| `linkedin_create_text_post` | `w_member_social` | Create text post |
-| `linkedin_create_link_post` | `w_member_social` | Create link/article post |
-| `linkedin_list_posts` | `w_member_social` | List your posts |
-| `linkedin_get_post` | `w_member_social` | Get post by URN |
-| `linkedin_delete_post` | `w_member_social` | Delete post |
-| `linkedin_repost` | `w_member_social` | Repost with optional commentary |
+| Tool | Description |
+|---|---|
+| `linkedin_create_text_post` | Create text post |
+| `linkedin_create_link_post` | Create link/article post |
+| `linkedin_list_posts` | List your posts |
+| `linkedin_get_post` | Get post by URN |
+| `linkedin_delete_post` | Delete post |
+| `linkedin_repost` | Repost with optional commentary |
 
 ### Media / Image Posts (3 tools)
 
 | Tool | Description |
 |---|---|
-| `linkedin_register_image_upload` | Register upload, get upload URL + asset URN |
+| `linkedin_register_image_upload` | Register upload, get URL + asset URN |
 | `linkedin_upload_image` | Upload base64 image to the upload URL |
 | `linkedin_create_image_post` | Create post with uploaded image |
 
-**Workflow:** `register` -> `upload` -> `create_image_post`
+> **Workflow:** `register` &rarr; `upload` &rarr; `create_image_post`
 
 ### Comments & Engagement (8 tools)
 
@@ -238,11 +314,11 @@ For Windsurf, add this to `~/.codeium/windsurf/mcp_config.json`.
 
 ### Events (3 tools)
 
-| Tool | Scope | Description |
-|---|---|---|
-| `linkedin_list_organization_events` | `r_events` | List org events |
-| `linkedin_get_event` | `r_events` | Get event by ID |
-| `linkedin_create_event` | `rw_events` | Create org event |
+| Tool | Description |
+|---|---|
+| `linkedin_list_organization_events` | List org events |
+| `linkedin_get_event` | Get event by ID |
+| `linkedin_create_event` | Create org event |
 
 ### Advanced / Escape Hatch (4 tools)
 
@@ -255,23 +331,6 @@ For Windsurf, add this to `~/.codeium/windsurf/mcp_config.json`.
 
 ---
 
-## API Boundaries
-
-LinkedIn does **not** expose public APIs for:
-
-| Operation | Reason |
-|---|---|
-| Edit profile (headline, about, skills) | No public API exists |
-| Read other people's profiles | Requires partner access |
-| Search people/companies | Requires partner access |
-| Send messages/InMail | Requires SNAP partner |
-| Read connections list | Deprecated/restricted |
-| Post analytics | Requires Marketing API partner |
-
-These are only available through LinkedIn's own web/mobile interfaces or restricted partner programs.
-
----
-
 ## Architecture
 
 ```
@@ -279,40 +338,56 @@ src/linkedin_fastmcp/
 ├── cli.py              # CLI entrypoint
 ├── config.py           # Configuration (env vars + token store)
 ├── errors.py           # Error hierarchy
-├── linkedin_client.py  # LinkedIn REST API client (all HTTP calls)
+├── linkedin_client.py  # LinkedIn REST API client
 ├── mcp_oauth.py        # MCP-level OAuth state machine
 ├── oauth.py            # LinkedIn OAuth helpers
 ├── oauth_callback.py   # Standalone OAuth callback server
 ├── schemas.py          # Pydantic input models
 ├── server.py           # FastMCP server + OAuth routes
 ├── token_store.py      # Token persistence
-└── tools/
-    ├── __init__.py     # Tool registration
-    ├── api.py          # Escape hatch + jobs
-    ├── auth.py         # OAuth tools
-    ├── comments.py     # Comment CRUD
-    ├── events.py       # Event tools
-    ├── media.py        # Image upload + posts
-    ├── organizations.py # Org tools
-    ├── posts.py        # Post CRUD
-    ├── profile.py      # Profile + email + verification
-    └── reactions.py    # Like/unlike/repost
+└── tools/              # 9 tool modules (36 tools)
 ```
+
+---
+
+## API Boundaries
+
+LinkedIn does **not** expose public APIs for:
+
+| Operation | Reason |
+|---|---|
+| Edit profile (headline, about, skills) | No public API |
+| Read other people's profiles | Partner access required |
+| Search people/companies | Partner access required |
+| Send messages/InMail | SNAP partner required |
+| Post analytics | Marketing API partner required |
 
 ---
 
 ## Environment Variables
 
-| Variable | Required | Description |
+| Variable | Required | Default |
 |---|---|---|
-| `LINKEDIN_CLIENT_ID` | Yes | OAuth app client ID |
-| `LINKEDIN_CLIENT_SECRET` | Yes | OAuth app client secret |
-| `LINKEDIN_REDIRECT_URI` | No | Callback URL (default: `http://localhost:8000/callback`) |
-| `LINKEDIN_ACCESS_TOKEN` | No | Pre-set access token (skips OAuth flow) |
-| `LINKEDIN_MEMBER_URN` | No | Override member URN (e.g. `urn:li:person:abc123`) |
-| `LINKEDIN_SCOPES` | No | Space-separated scopes (has sensible defaults) |
-| `LINKEDIN_API_VERSION` | No | LinkedIn API version (default: `202602`) |
-| `LINKEDIN_TOKEN_FILE` | No | Custom token file path |
+| `LINKEDIN_CLIENT_ID` | Yes | -- |
+| `LINKEDIN_CLIENT_SECRET` | Yes | -- |
+| `LINKEDIN_REDIRECT_URI` | No | `http://localhost:8000/callback` |
+| `LINKEDIN_ACCESS_TOKEN` | No | Token store |
+| `LINKEDIN_MEMBER_URN` | No | Auto-derived |
+| `LINKEDIN_SCOPES` | No | All available scopes |
+| `LINKEDIN_API_VERSION` | No | `202602` |
+
+---
+
+## Security
+
+This project is security hardened. See [SECURITY.md](SECURITY.md) for details.
+
+- SSRF protection on image uploads (LinkedIn domains only)
+- XSS prevention in OAuth callback HTML
+- Access tokens never returned in full to LLM clients
+- OAuth redirect URIs restricted to localhost
+- Bounded in-memory state (DoS prevention)
+- All inputs validated via Pydantic
 
 ---
 
@@ -320,15 +395,9 @@ src/linkedin_fastmcp/
 
 ```bash
 pip install -e '.[dev]'
-python3 -m pytest -v       # Run tests
+python3 -m pytest -v       # 43 tests
 python3 -m ruff check .    # Lint
 ```
-
----
-
-## Security
-
-See [SECURITY.md](SECURITY.md) for vulnerability reporting and security practices.
 
 ---
 
@@ -341,3 +410,13 @@ See [SECURITY.md](SECURITY.md) for vulnerability reporting and security practice
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md).
+
+---
+
+<div align="center">
+
+**Built with [FastMCP](https://gofastmcp.com/) &bull; Powered by [LinkedIn REST APIs](https://learn.microsoft.com/en-us/linkedin/)**
+
+Made with &#10084; by [Raj Dudhare](https://github.com/rajdudhare1)
+
+</div>
